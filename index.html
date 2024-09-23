@@ -141,43 +141,42 @@ $(document).ready(function () {
         });
     }
 
+    // Modified processEvents function to filter by specific categories
     function processEvents(events) {
-    const calendarEvents = [];
-    events.forEach(event => {
-        if (event.timeMatrix && Array.isArray(event.timeMatrix)) {
-            event.timeMatrix.forEach(timeMatrix => {
-                if (timeMatrix.timeslots && typeof timeMatrix.timeslots === 'object') {
-                    Object.entries(timeMatrix.timeslots).forEach(([date, slots]) => {
-                        if (Array.isArray(slots)) {
-                            slots.forEach(slot => {
-                                const startDateTime = `${date}T${slot}`;
-                                const endDateTime = luxon.DateTime.fromISO(startDateTime).plus({ minutes: parseInt(event.duration) }).toISO();
-                                calendarEvents.push({
-                                    id: event.id,
-                                    title: event.name,
-                                    start: startDateTime,
-                                    end: endDateTime,
-                                    resourceId: timeMatrix.provider_id,
-                                    description: event.description || '',
-                                    bookings_limit: event.bookings_limit,
-                                    category: event.categories[0],
-                                    rawStartTime: startDateTime,
-                                    rawEndTime: endDateTime,
-                                    displaySlots: ['1', '2', '3', '5', '6', '7', '9'].includes(event.categories[0])
+        const calendarEvents = [];
+        const allowedCategories = ['1', '2', '4', '5', '6', '9', '11', '12'];
+        events.forEach(event => {
+            if (event.timeMatrix && Array.isArray(event.timeMatrix) && allowedCategories.includes(event.categories[0])) {
+                event.timeMatrix.forEach(timeMatrix => {
+                    if (timeMatrix.timeslots && typeof timeMatrix.timeslots === 'object') {
+                        Object.entries(timeMatrix.timeslots).forEach(([date, slots]) => {
+                            if (Array.isArray(slots)) {
+                                slots.forEach(slot => {
+                                    const startDateTime = `${date}T${slot}`;
+                                    const endDateTime = luxon.DateTime.fromISO(startDateTime).plus({ minutes: parseInt(event.duration) }).toISO();
+                                    calendarEvents.push({
+                                        id: event.id,
+                                        title: event.name,
+                                        start: startDateTime,
+                                        end: endDateTime,
+                                        resourceId: timeMatrix.provider_id,
+                                        description: event.description || '',
+                                        bookings_limit: event.bookings_limit,
+                                        category: event.categories[0],
+                                        rawStartTime: startDateTime,
+                                        rawEndTime: endDateTime,
+                                        displaySlots: allowedCategories.includes(event.categories[0])
+                                    });
                                 });
-                            });
-                        }
-                    });
-                }
-            });
-        } else {
-            console.warn(`Missing or invalid timeMatrix for event ${event.id}`);
-        }
-    });
-    console.log("Processed events for calendar:", calendarEvents);
-    return calendarEvents;
-}
-
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        console.log("Processed events for calendar:", calendarEvents);
+        return calendarEvents;
+    }
 
     function getHardcodedEvents() {
         const resources = getHardcodedResources();
